@@ -9,9 +9,11 @@ app.use(cors()); // Enable CORS
 
 // Function to check if a number is Armstrong
 const isArmstrong = (num) => {
-  const digits = num.toString().split("").map(Number);
+  const digits = Math.abs(num).toString().split("").map(Number);
   const power = digits.length;
-  return digits.reduce((sum, d) => sum + Math.pow(d, power), 0) === num;
+  return (
+    digits.reduce((sum, d) => sum + Math.pow(d, power), 0) === Math.abs(num)
+  );
 };
 
 // Function to check if a number is prime
@@ -25,6 +27,7 @@ const isPrime = (num) => {
 
 // Function to check if a number is perfect
 const isPerfect = (num) => {
+  if (num <= 0) return false; // Only positive numbers can be perfect
   let sum = 1;
   for (let i = 2; i <= Math.sqrt(num); i++) {
     if (num % i === 0) {
@@ -50,7 +53,9 @@ app.get("/api/classify-number", async (req, res) => {
 
   // Validate input
   if (!number || isNaN(number)) {
-    return res.status(400).json({ number, error: true });
+    return res
+      .status(400)
+      .json({ number, error: true, message: "Invalid number" });
   }
 
   const num = parseInt(number);
@@ -58,14 +63,20 @@ app.get("/api/classify-number", async (req, res) => {
   const perfect = isPerfect(num);
   const armstrong = isArmstrong(num);
   const isEven = num % 2 === 0;
-  const digitSum = num
+
+  // Ensure digit_sum is numeric (handles negative numbers correctly)
+  const digitSum = Math.abs(num)
     .toString()
     .split("")
     .reduce((sum, digit) => sum + parseInt(digit), 0);
 
-  const properties = armstrong
-    ? ["armstrong", isEven ? "even" : "odd"]
-    : [isEven ? "even" : "odd"];
+  // Build the properties list correctly
+  const properties = [];
+  if (armstrong) properties.push("armstrong");
+  if (prime) properties.push("prime");
+  if (perfect) properties.push("perfect");
+  properties.push(isEven ? "even" : "odd");
+
   const funFact = await getFunFact(num);
 
   res.json({
